@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import ChatbotIcon from "./components/ChatbotIcon";
 import Chatform from "./components/Chatform";
 import ChatMessage from "./components/ChatMessage";
@@ -10,6 +10,7 @@ const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVer
 
 const App = () => {
   const [chatHistory, setChatHistory] = useState([]);
+  const chatBodyRef = useRef();
 
   const generateBotResponse = async (history) => {
     // Helper function to update chat history
@@ -39,6 +40,11 @@ const App = () => {
     }
   };
 
+  useEffect(() => {
+    // Auto-scroll whenever chat history updates
+    chatBodyRef.current.scrollTo({ top: chatBodyRef.current.scrollHeight, behavior: "smooth" });
+  }, [chatHistory]);
+
   return (
     <div className="container">
 
@@ -56,7 +62,7 @@ const App = () => {
         </div>
 
         {/* Chatbot Body */}
-        <div className="chat-body">
+        <div ref={chatBodyRef} className="chat-body">
           <div className="message bot-message">
             <ChatbotIcon />
             <p className="message-text">
