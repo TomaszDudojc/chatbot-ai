@@ -3,17 +3,40 @@ import ChatbotIcon from "./components/ChatbotIcon";
 import Chatform from "./components/Chatform";
 import ChatMessage from "./components/ChatMessage";
 
+const apiVersion = "gemini-flash-latest";
+const apiKey = import.meta.env.VITE_API_KEY;
+//const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + apiVersion + ":generateContent?key=" + apiKey;
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:generateContent?key=${apiKey}`;
+
 const App = () => {
   const [chatHistory, setChatHistory] = useState([]);
 
-  const generateBotResponse = (history) => {
-    console.log(history);
+  const generateBotResponse = async (history) => {//
+    // Format chat history for API request
+    history = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
+
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: history })
+    }
+
+    try {
+      // Make the API call to get the bot's response
+      const response = await fetch(apiUrl, requestOptions);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error.message || "Coś poszło nie tak!");
+
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
     <div className="container">
 
-        <div className="chatbot-popup">
+      <div className="chatbot-popup">
 
         {/* Chatbot Header */}
         <div className="chat-header">
@@ -37,12 +60,12 @@ const App = () => {
           {/* Render the chat history dynamically */}
           {chatHistory.map((chat, index) => (
             <ChatMessage key={index} chat={chat} />
-          ))}          
+          ))}
         </div>
 
         {/* Chatbot Footer */}
         <div className="chat-footer">
-          <Chatform chatHistory={chatHistory} setChatHistory={setChatHistory} generateBotResponse={generateBotResponse} />          
+          <Chatform chatHistory={chatHistory} setChatHistory={setChatHistory} generateBotResponse={generateBotResponse} />
         </div>
 
       </div>
