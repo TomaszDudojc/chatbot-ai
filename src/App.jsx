@@ -5,13 +5,7 @@ import ChatMessage from "./components/ChatMessage";
 
 const apiVersion = "gemini-flash-latest";
 const apiKey = import.meta.env.VITE_API_KEY;
-// LEGACY - Passing the API key via URL
-//const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + apiVersion + ":generateContent?key=" + apiKey;
-//const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:generateContent?key=${apiKey}`;
-
-// NEW - API key is now sent in the headers
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:generateContent`;
-
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:streamGenerateContent?alt=sse`;
 
 const App = () => {
   const [chatHistory, setChatHistory] = useState([]);
@@ -19,41 +13,75 @@ const App = () => {
   const chatBodyRef = useRef();
 
   const generateBotResponse = async (history) => {
-    // Helper function to update chat history
+    let accumulatedText = "";
+
+    // Helper function to update chat history (handles streaming and errors)
     const updateHistory = (text, isError = false) => {
-      setChatHistory((prev) => [...prev.filter((msg) => msg.text !== "Myślę..."), { role: "model", text, isError }]);
+      setChatHistory((prev) => {
+        const lastMsgIndex = prev.length - 1;
+
+        // If it's a regular streaming update (not an error) and last message is from model
+        if (!isError && lastMsgIndex >= 0 && prev[lastMsgIndex].role === "model" && !prev[lastMsgIndex].isError) {
+          const newHistory = [...prev];
+          newHistory[lastMsgIndex] = { ...newHistory[lastMsgIndex], text };
+          return newHistory;
+        }
+
+        // For errors or the very first chunk: remove "Thinking..." and add new message
+        const filtered = prev.filter((msg) => msg.text !== "Myślę...");
+        return [...filtered, { role: "model", text, isError }];
+      });
     };
-    // Format chat history for API request
-    history = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
 
-    // LEGACY - Passing the API key via URL
-    /*
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: history })
-    }
-    */
+    // Format chat history for the API
+    const formattedHistory = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
 
-    // NEW VERSION - Passing the API key in the header for better security
     const requestOptions = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey
       },
-      body: JSON.stringify({ contents: history })
+      body: JSON.stringify({ contents: formattedHistory })
     };
 
     try {
-      // Make the API call to get the bot's response
       const response = await fetch(apiUrl, requestOptions);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error.message || "Coś poszło nie tak!");
 
-      // Clean and update chat history with bot's response
-      const apiResponseText = data.candidates[0].content.parts[0].text.replace(/\*\* (.*?)\*\*/g, "$1").trim();
-      updateHistory(apiResponseText);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error.message || "Something went wrong!");
+      }
+
+      // Handle data streaming
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const json = JSON.parse(line.substring(6));
+              const textFragment = json.candidates[0].content.parts[0].text;
+
+              if (textFragment) {
+                accumulatedText += textFragment;
+                // Remove formatting and update UI in real-time
+                const cleanedText = accumulatedText.replace(/\*\* (.*?)\*\*/g, "$1").trim();
+                updateHistory(cleanedText);
+              }
+            } catch (e) {
+              continue; // Ignore errors from incomplete JSON fragments
+            }
+          }
+        }
+      }
     } catch (error) {
       updateHistory(error.message, true);
     }
@@ -112,4 +140,3 @@ const App = () => {
 };
 
 export default App;
-
