@@ -5,8 +5,13 @@ import ChatMessage from "./components/ChatMessage";
 
 const apiVersion = "gemini-flash-latest";
 const apiKey = import.meta.env.VITE_API_KEY;
+// LEGACY - Passing the API key via URL
 //const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + apiVersion + ":generateContent?key=" + apiKey;
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:generateContent?key=${apiKey}`;
+//const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:generateContent?key=${apiKey}`;
+
+// NEW - API key is now sent in the headers
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:generateContent`;
+
 
 const App = () => {
   const [chatHistory, setChatHistory] = useState([]);
@@ -21,11 +26,24 @@ const App = () => {
     // Format chat history for API request
     history = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
 
+    // LEGACY - Passing the API key via URL
+    /*
     const requestOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: history })
     }
+    */
+
+    // NEW VERSION - Passing the API key in the header for better security
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
+      },
+      body: JSON.stringify({ contents: history })
+    };
 
     try {
       // Make the API call to get the bot's response
