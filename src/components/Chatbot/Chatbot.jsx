@@ -123,7 +123,7 @@ const Chatbot = () => {
                     <div className="message bot-message">
                         <ChatbotIcon />
                         <p className="message-text">
-                            Hi there! <br /> How can I help you today?
+                            Cześć! <br /> W czym mogę Ci dzisiaj pomóc?
                         </p>
                     </div>
 
