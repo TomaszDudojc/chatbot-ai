@@ -40,6 +40,10 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 999;
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(145deg, #4da1ff, #3577e3);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4),
+    inset 0 2px 3px rgba(255, 255, 255, 0.3),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.1)
 }
 
 .chatbot-scope .chatbot-toggler:hover {
@@ -60,7 +64,17 @@
 
 .chatbot-scope.show-chatbot .chatbot-toggler {
   transform: rotate(90deg);
-  background-color: var(--icon-grey);
+  background: linear-gradient(145deg, #7a9cb9, var(--icon-grey));
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15),
+    inset 0 2px 3px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chatbot-scope.show-chatbot .chatbot-toggler:hover {
+  transform: rotate(90deg) scale(1.1);
+  background: linear-gradient(145deg, #6a8ba8, #4a6782);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2),
+    inset 0 2px 3px rgba(255, 255, 255, 0.2);
 }
 
 .chatbot-scope.show-chatbot .chatbot-toggler span:first-child {
