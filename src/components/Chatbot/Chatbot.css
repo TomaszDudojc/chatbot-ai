@@ -87,7 +87,7 @@
   background: #fff;
   border-radius: 15px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   z-index: 999;
 }
@@ -99,6 +99,9 @@
 
 /* --- HEADER --- */
 .chatbot-scope .chat-header {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 2;
   display: flex;
   padding: 15px 22px;
   align-items: center;
