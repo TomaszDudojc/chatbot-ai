@@ -3,6 +3,7 @@ import { useRef, useEffect, useState } from "react";
 import ChatbotIcon from "./ChatbotIcon";
 import Chatform from "./Chatform";
 import ChatMessage from "./ChatMessage";
+
 const apiVersion = "gemini-flash-latest";
 const apiKey = import.meta.env.VITE_API_KEY;
 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:streamGenerateContent?alt=sse`;
