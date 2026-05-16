@@ -387,3 +387,13 @@
     padding: 10px 15px 15px;
   }
 }
+
+/* Styles reset for bot buttons and icons - excluding the toggler */
+.chatbot-scope button:not(.chatbot-toggler),
+.chatbot-scope button:not(.chatbot-toggler) span,
+.chatbot-scope button:not(.chatbot-toggler) svg {
+  position: static !important;
+  transform: none !important;
+  margin: 0 !important;
+  float: none !important;
+}
