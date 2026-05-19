@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-const Chatform = ({ chatHistory, setChatHistory, generateBotResponse }) => {
+const ChatForm = ({ chatHistory, setChatHistory, generateBotResponse }) => {
     const inputRef = useRef();
 
     const handleFormSubmit = (e) => {
@@ -29,4 +29,4 @@ const Chatform = ({ chatHistory, setChatHistory, generateBotResponse }) => {
     );
 };
 
-export default Chatform
+export default ChatForm

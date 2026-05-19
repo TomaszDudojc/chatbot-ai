@@ -1,14 +1,20 @@
-import './Chatbot.css';
 import { useRef, useEffect, useState } from "react";
 import ChatbotIcon from "./ChatbotIcon";
-import Chatform from "./ChatForm";
+import ChatForm from "./ChatForm";
 import ChatMessage from "./ChatMessage";
+import './Chatbot.css';
 
 const apiVersion = "gemini-flash-latest";
-/* --- for Create React App (CRA) --- */
-//const apiKey = process.env.REACT_APP_API_KEY;
-/* --- for Vite --- */
-const apiKey = import.meta.env.VITE_API_KEY;
+
+// Get API key from env file for Vite or CRA (Create React App)
+const getApiKey = () => {  
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env.VITE_API_KEY;
+  } 
+  return process.env.REACT_APP_API_KEY || null;
+};
+
+const apiKey = getApiKey();
 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:streamGenerateContent?alt=sse`;
 
 const Chatbot = () => {
@@ -139,7 +145,7 @@ const Chatbot = () => {
 
                 {/* Chatbot Footer - Input field and send button */}
                 <div className="chat-footer">
-                    <Chatform
+                    <ChatForm
                         chatHistory={chatHistory}
                         setChatHistory={setChatHistory}
                         generateBotResponse={generateBotResponse}
