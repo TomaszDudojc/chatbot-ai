@@ -4,6 +4,8 @@ import ChatForm from "./ChatForm";
 import ChatMessage from "./ChatMessage";
 import './Chatbot.css';
 
+//!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! początek
+/*
 const apiVersion = "gemini-flash-latest";
 
 // Get API key from env file for Vite or CRA (Create React App)
@@ -16,6 +18,9 @@ const getApiKey = () => {
 
 const apiKey = getApiKey();
 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:streamGenerateContent?alt=sse`;
+*/
+const apiUrl = "/api/chat"; // endpoint na Twoim backendzie
+//!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! koniec
 
 const Chatbot = () => {
     const [chatHistory, setChatHistory] = useState([]);
@@ -23,8 +28,6 @@ const Chatbot = () => {
     const chatBodyRef = useRef();
 
     const generateBotResponse = async (history) => {
-        let accumulatedText = "";
-
         // Helper function to update chat history (handles streaming and errors)
         const updateHistory = (text, isError = false) => {
             setChatHistory((prev) => {
@@ -46,6 +49,8 @@ const Chatbot = () => {
         // Format chat history for the API
         const formattedHistory = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
 
+        //!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! początek
+        /*
         const requestOptions = {
             method: "POST",
             headers: {
@@ -54,6 +59,13 @@ const Chatbot = () => {
             },
             body: JSON.stringify({ contents: formattedHistory })
         };
+        */
+        const requestOptions = {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: formattedHistory })
+        };
+        //!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! koniec
 
         try {
             const response = await fetch(apiUrl, requestOptions);
@@ -63,35 +75,59 @@ const Chatbot = () => {
                 throw new Error(data.error.message || "Something went wrong!");
             }
 
+            //!!!!!!!!!!!!!!!!!!!!!zmiana w związku z jąkaniem po przeniesienu na serwer!!!!!!!!!!!!!!!!!! początek
             // Handle data streaming
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let buffer = ""; //!!!!!!!!!!!dopisany kawałek 17.09            
+            // Tworzymy lokalny akumulator tekstowy dedykowany dla tej pętli,
+            // aby odciąć asynchroniczne opóźnienia hooka useState w React.
+            // TA ZMIENNA JEST KLUCZEM: Zapamiętuje każdą najmniejszą nową cząstkę tekstu 
+            // i buduje pełne zdanie od zera, całkowicie ignorując szatkowanie pakietów przez sieć.
+            let fullResponseText = "";
 
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split("\n");
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop();
 
                 for (const line of lines) {
                     if (line.startsWith("data: ")) {
                         try {
                             const json = JSON.parse(line.substring(6));
+
+                            // Pobieramy nadesłany fragment tekstu
                             const textFragment = json.candidates[0].content.parts[0].text;
 
                             if (textFragment) {
-                                accumulatedText += textFragment;
-                                // Remove formatting and update UI in real-time
-                                const cleanedText = accumulatedText.replace(/\*\* (.*?)\*\*/g, "$1").trim();
+                                // Sprawdzamy, czy nadesłany tekst to nowy fragment (delta), czy pełny ciąg.
+                                // Jeśli to tylko mała cząstka (np. "ąbie"), doklejamy ją do całości.
+                                if (!fullResponseText.endsWith(textFragment)) {
+                                    if (textFragment.startsWith(fullResponseText)) {
+                                        // Jeśli Google wysłało narastający tekst, nadpisujemy nim całość
+                                        fullResponseText = textFragment;
+                                    } else {
+                                        // W standardowym przypadku po prostu doklejamy nowe słowo
+                                        fullResponseText += textFragment;
+                                    }
+                                }
+
+                                // Czyścimy formatowanie Markdown Twoim poprawionym regexem
+                                const cleanedText = fullResponseText.replace(/\*\*(.*?)\*\*/g, "$1").trim();
+
+                                // Wypychamy zawsze kompletny, narastający od zera tekst do okna czatu
                                 updateHistory(cleanedText);
                             }
                         } catch (e) {
-                            continue; // Ignore errors from incomplete JSON fragments
+                            continue;
                         }
                     }
                 }
             }
+            //!!!!!!!!!!!!!!!!!!!!!zmiana w związku z jąkaniem po przeniesienu na serwer!!!!!!!!!!!!!!!!!! koniec
         } catch (error) {
             updateHistory(error.message, true);
         }
