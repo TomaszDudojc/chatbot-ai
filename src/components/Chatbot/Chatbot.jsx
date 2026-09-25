@@ -4,23 +4,13 @@ import ChatForm from "./ChatForm";
 import ChatMessage from "./ChatMessage";
 import './Chatbot.css';
 
-//!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! początek
-/*
-const apiVersion = "gemini-flash-latest";
+//const apiUrl = "/api/chat"; // An endpoint on your backend
+//const apiUrl = "http://localhost:5001/api/chat"; //  This immediately bypasses the proxy issue!
+// 1. You define the port at the very top of the file in a single, easily accessible place.
+const CHAT_PORT = "5000";
+// 2. You build a dynamic path using this variable
+const apiUrl = `http://localhost:${CHAT_PORT}/api/chat`;
 
-// Get API key from env file for Vite or CRA (Create React App)
-const getApiKey = () => {  
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env.VITE_API_KEY;
-  } 
-  return process.env.REACT_APP_API_KEY || null;
-};
-
-const apiKey = getApiKey();
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:streamGenerateContent?alt=sse`;
-*/
-const apiUrl = "/api/chat"; // endpoint na Twoim backendzie
-//!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! koniec
 
 const Chatbot = () => {
     const [chatHistory, setChatHistory] = useState([]);
@@ -49,23 +39,11 @@ const Chatbot = () => {
         // Format chat history for the API
         const formattedHistory = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
 
-        //!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! początek
-        /*
-        const requestOptions = {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey
-            },
-            body: JSON.stringify({ contents: formattedHistory })
-        };
-        */
         const requestOptions = {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contents: formattedHistory })
         };
-        //!!!!!!!!!!!!!!!!!!!!!przniesienie połącznia na serwer!!!!!!!!!!!!!!!!!! koniec
 
         try {
             const response = await fetch(apiUrl, requestOptions);
@@ -75,11 +53,10 @@ const Chatbot = () => {
                 throw new Error(data.error.message || "Something went wrong!");
             }
 
-            //!!!!!!!!!!!!!!!!!!!!!zmiana w związku z jąkaniem po przeniesienu na serwer!!!!!!!!!!!!!!!!!! początek
             // Handle data streaming
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let buffer = ""; //!!!!!!!!!!!dopisany kawałek 17.09            
+            let buffer = "";        
             // Tworzymy lokalny akumulator tekstowy dedykowany dla tej pętli,
             // aby odciąć asynchroniczne opóźnienia hooka useState w React.
             // TA ZMIENNA JEST KLUCZEM: Zapamiętuje każdą najmniejszą nową cząstkę tekstu 
@@ -127,7 +104,6 @@ const Chatbot = () => {
                     }
                 }
             }
-            //!!!!!!!!!!!!!!!!!!!!!zmiana w związku z jąkaniem po przeniesienu na serwer!!!!!!!!!!!!!!!!!! koniec
         } catch (error) {
             updateHistory(error.message, true);
         }

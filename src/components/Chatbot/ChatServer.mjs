@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { Readable } from 'stream';
+import cors from 'cors'; 
 
 dotenv.config(); // Automatycznie ładuje plik .env z głównego katalogu projektu
 
@@ -10,6 +11,7 @@ const apiKey = process.env.VITE_API_KEY || process.env.REACT_APP_API_KEY || proc
 const apiVersion = "gemini-2.5-flash";
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.post('/api/chat', async (req, res) => {
