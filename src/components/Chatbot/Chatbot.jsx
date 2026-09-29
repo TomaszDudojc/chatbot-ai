@@ -30,9 +30,9 @@ const Chatbot = () => {
                     return newHistory;
                 }
 
-                // For errors or the very first chunk: remove "Thinking..." and add new message
+                // For errors or the very first chunk: remove "Thinking..." and add new message                
                 const filtered = prev.filter((msg) => msg.text !== "Myślę...");
-                return [...filtered, { role: "model", text, isError }];
+                return [...filtered, { id: crypto.randomUUID(), role: "model", text, isError }];
             });
         };
 
@@ -56,7 +56,7 @@ const Chatbot = () => {
             // Handle data streaming
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let buffer = "";        
+            let buffer = "";
             // Tworzymy lokalny akumulator tekstowy dedykowany dla tej pętli,
             // aby odciąć asynchroniczne opóźnienia hooka useState w React.
             // TA ZMIENNA JEST KLUCZEM: Zapamiętuje każdą najmniejszą nową cząstkę tekstu 
@@ -149,9 +149,9 @@ const Chatbot = () => {
                         </p>
                     </div>
 
-                    {/* Render the chat history dynamically */}
-                    {chatHistory.map((chat, index) => (
-                        <ChatMessage key={index} chat={chat} />
+                    {/* Render the chat history dynamically */}                   
+                    {chatHistory.map((chat) => (
+                        <ChatMessage key={chat.id} chat={chat} />
                     ))}
                 </div>
 

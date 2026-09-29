@@ -9,15 +9,15 @@ const ChatForm = ({ chatHistory, setChatHistory, generateBotResponse }) => {
         if (!userMessage) return;
         inputRef.current.value = "";
 
-        // Update chat history with th user's message
-        setChatHistory(history => [...history, { role: "user", text: userMessage }]);
+        // Update chat history with th user's message       
+        setChatHistory(history => [...history, { id: crypto.randomUUID(), role: "user", text: userMessage }]);
 
-        // Delay 600 ms before showing "Myślę..." message
+        // Delay 600 ms before showing "Myślę..." message        
         setTimeout(() => {
             // Add a "Myślę..." placeholder for the bot's response
-            setChatHistory(history => [...history, { role: "model", text: "Myślę..." }]);
+            setChatHistory(history => [...history, { id: crypto.randomUUID(), role: "model", text: "Myślę..." }]);
             // Call the function to generate bot response
-            generateBotResponse([...chatHistory, { role: "user", text: userMessage }]);
+            generateBotResponse([...chatHistory, { id: crypto.randomUUID(), role: "user", text: userMessage }]);
         }, 600);
     }
 
