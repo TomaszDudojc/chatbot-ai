@@ -11,6 +11,9 @@ const CHAT_PORT = "5000";
 // 2. You build a dynamic path using this variable
 const apiUrl = `http://localhost:${CHAT_PORT}/api/chat`;
 
+// Stała dla tekstu ładowania odpowiedzi bota
+const LOADING_TEXT = "Myślę...";
+
 
 const Chatbot = () => {
     const [chatHistory, setChatHistory] = useState([]);
@@ -26,12 +29,16 @@ const Chatbot = () => {
                 // If it's a regular streaming update (not an error) and last message is from model
                 if (!isError && lastMsgIndex >= 0 && prev[lastMsgIndex].role === "model" && !prev[lastMsgIndex].isError) {
                     const newHistory = [...prev];
-                    newHistory[lastMsgIndex] = { ...newHistory[lastMsgIndex], text };
+                    //newHistory[lastMsgIndex] = { ...newHistory[lastMsgIndex], text };
+                    // TUTAJ: Dodano flagę isLoading: false do aktualizowanej wiadomości
+                    newHistory[lastMsgIndex] = { ...newHistory[lastMsgIndex], text, isLoading: false };
                     return newHistory;
                 }
 
                 // For errors or the very first chunk: remove "Thinking..." and add new message                
-                const filtered = prev.filter((msg) => msg.text !== "Myślę...");
+                //const filtered = prev.filter((msg) => msg.text !== "Myślę...");
+                // TUTAJ: Filtrowanie opiera się teraz na fladze !msg.isLoading zamiast dopasowywania tekstu
+                const filtered = prev.filter((msg) => !msg.isLoading);
                 return [...filtered, { id: crypto.randomUUID(), role: "model", text, isError }];
             });
         };
@@ -149,7 +156,7 @@ const Chatbot = () => {
                         </p>
                     </div>
 
-                    {/* Render the chat history dynamically */}                   
+                    {/* Render the chat history dynamically */}
                     {chatHistory.map((chat) => (
                         <ChatMessage key={chat.id} chat={chat} />
                     ))}
@@ -161,6 +168,7 @@ const Chatbot = () => {
                         chatHistory={chatHistory}
                         setChatHistory={setChatHistory}
                         generateBotResponse={generateBotResponse}
+                        loadingText={LOADING_TEXT} //TUTAJ: Dodano prop loadingText={LOADING_TEXT}
                     />
                 </div>
             </div>
