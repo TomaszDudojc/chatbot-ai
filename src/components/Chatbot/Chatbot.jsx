@@ -84,7 +84,9 @@ const Chatbot = () => {
                             const json = JSON.parse(line.substring(6));
 
                             // Pobieramy nadesłany fragment tekstu
-                            const textFragment = json.candidates[0].content.parts[0].text;
+                            //const textFragment = json.candidates[0].content.parts[0].text;
+                            // Zastosowanie optional chaining (?.) zapobiega wyłączeniu aplikacji przy braku oczekiwanej struktury
+                            const textFragment = json.candidates?.[0]?.content?.parts?.[0]?.text;
 
                             if (textFragment) {
                                 // Sprawdzamy, czy nadesłany tekst to nowy fragment (delta), czy pełny ciąg.
@@ -104,6 +106,9 @@ const Chatbot = () => {
 
                                 // Wypychamy zawsze kompletny, narastający od zera tekst do okna czatu
                                 updateHistory(cleanedText);
+                            } else if (json.candidates?.[0]?.finishReason === "SAFETY") {
+                                // Jawna informacja dla użytkownika w przypadku zablokowania treści przez filtry
+                                updateHistory("Przepraszam, nie mogę odpowiedzieć na to pytanie.", true);
                             }
                         } catch (e) {
                             continue;
