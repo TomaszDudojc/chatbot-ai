@@ -18,9 +18,13 @@ const LOADING_TEXT = "Myślę...";
 const Chatbot = () => {
     const [chatHistory, setChatHistory] = useState([]);
     const [showChatbot, setShowChatbot] = useState(false);
+    // DODANO: Nowy stan do kontrolowania procesu generowania odpowiedzi
+    const [isGenerating, setIsGenerating] = useState(false);
     const chatBodyRef = useRef();
 
     const generateBotResponse = async (history) => {
+        // DODANO: Aktywacja blokady na początku funkcji
+        setIsGenerating(true);
         // Helper function to update chat history (handles streaming and errors)
         const updateHistory = (text, isError = false) => {
             setChatHistory((prev) => {
@@ -118,6 +122,9 @@ const Chatbot = () => {
             }
         } catch (error) {
             updateHistory(error.message, true);
+        } finally {
+            // DODANO: Blok finally gwarantuje wyłączenie blokady po sukcesie lub błędzie
+            setIsGenerating(false);
         }
     };
 
@@ -173,7 +180,8 @@ const Chatbot = () => {
                         chatHistory={chatHistory}
                         setChatHistory={setChatHistory}
                         generateBotResponse={generateBotResponse}
-                        loadingText={LOADING_TEXT} //TUTAJ: Dodano prop loadingText={LOADING_TEXT}
+                        loadingText={LOADING_TEXT} //TUTAJ: Dodano prop loadingText={LOADING_TEXT}                        
+                        isGenerating={isGenerating} // DODANO: Przekazanie flagi blokady do formularza
                     />
                 </div>
             </div>
