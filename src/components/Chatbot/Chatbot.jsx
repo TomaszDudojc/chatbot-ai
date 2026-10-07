@@ -4,27 +4,27 @@ import ChatForm from "./ChatForm";
 import ChatMessage from "./ChatMessage";
 import './Chatbot.css';
 
-const apiVersion = "gemini-flash-latest";
+//const apiUrl = "/api/chat"; // An endpoint on your backend
+//const apiUrl = "http://localhost:5001/api/chat"; //  This immediately bypasses the proxy issue!
+// 1. You define the port at the very top of the file in a single, easily accessible place.
+const CHAT_PORT = "5000";
+// 2. You build a dynamic path using this variable
+const apiUrl = `http://localhost:${CHAT_PORT}/api/chat`;
 
-// Get API key from env file for Vite or CRA (Create React App)
-const getApiKey = () => {  
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env.VITE_API_KEY;
-  } 
-  return process.env.REACT_APP_API_KEY || null;
-};
+// Stała dla tekstu ładowania odpowiedzi bota
+const LOADING_TEXT = "Myślę...";
 
-const apiKey = getApiKey();
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiVersion}:streamGenerateContent?alt=sse`;
 
 const Chatbot = () => {
     const [chatHistory, setChatHistory] = useState([]);
     const [showChatbot, setShowChatbot] = useState(false);
+    // DODANO: Nowy stan do kontrolowania procesu generowania odpowiedzi
+    const [isGenerating, setIsGenerating] = useState(false);
     const chatBodyRef = useRef();
 
     const generateBotResponse = async (history) => {
-        let accumulatedText = "";
-
+        // DODANO: Aktywacja blokady na początku funkcji
+        setIsGenerating(true);
         // Helper function to update chat history (handles streaming and errors)
         const updateHistory = (text, isError = false) => {
             setChatHistory((prev) => {
@@ -33,13 +33,17 @@ const Chatbot = () => {
                 // If it's a regular streaming update (not an error) and last message is from model
                 if (!isError && lastMsgIndex >= 0 && prev[lastMsgIndex].role === "model" && !prev[lastMsgIndex].isError) {
                     const newHistory = [...prev];
-                    newHistory[lastMsgIndex] = { ...newHistory[lastMsgIndex], text };
+                    //newHistory[lastMsgIndex] = { ...newHistory[lastMsgIndex], text };
+                    // TUTAJ: Dodano flagę isLoading: false do aktualizowanej wiadomości
+                    newHistory[lastMsgIndex] = { ...newHistory[lastMsgIndex], text, isLoading: false };
                     return newHistory;
                 }
 
-                // For errors or the very first chunk: remove "Thinking..." and add new message
-                const filtered = prev.filter((msg) => msg.text !== "Myślę...");
-                return [...filtered, { role: "model", text, isError }];
+                // For errors or the very first chunk: remove "Thinking..." and add new message                
+                //const filtered = prev.filter((msg) => msg.text !== "Myślę...");
+                // TUTAJ: Filtrowanie opiera się teraz na fladze !msg.isLoading zamiast dopasowywania tekstu
+                const filtered = prev.filter((msg) => !msg.isLoading);
+                return [...filtered, { id: crypto.randomUUID(), role: "model", text, isError }];
             });
         };
 
@@ -48,10 +52,7 @@ const Chatbot = () => {
 
         const requestOptions = {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contents: formattedHistory })
         };
 
@@ -66,34 +67,64 @@ const Chatbot = () => {
             // Handle data streaming
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let buffer = "";
+            // Tworzymy lokalny akumulator tekstowy dedykowany dla tej pętli,
+            // aby odciąć asynchroniczne opóźnienia hooka useState w React.
+            // TA ZMIENNA JEST KLUCZEM: Zapamiętuje każdą najmniejszą nową cząstkę tekstu 
+            // i buduje pełne zdanie od zera, całkowicie ignorując szatkowanie pakietów przez sieć.
+            let fullResponseText = "";
 
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split("\n");
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop();
 
                 for (const line of lines) {
                     if (line.startsWith("data: ")) {
                         try {
                             const json = JSON.parse(line.substring(6));
-                            const textFragment = json.candidates[0].content.parts[0].text;
+
+                            // Pobieramy nadesłany fragment tekstu
+                            //const textFragment = json.candidates[0].content.parts[0].text;
+                            // Zastosowanie optional chaining (?.) zapobiega wyłączeniu aplikacji przy braku oczekiwanej struktury
+                            const textFragment = json.candidates?.[0]?.content?.parts?.[0]?.text;
 
                             if (textFragment) {
-                                accumulatedText += textFragment;
-                                // Remove formatting and update UI in real-time
-                                const cleanedText = accumulatedText.replace(/\*\* (.*?)\*\*/g, "$1").trim();
+                                // Sprawdzamy, czy nadesłany tekst to nowy fragment (delta), czy pełny ciąg.
+                                // Jeśli to tylko mała cząstka (np. "ąbie"), doklejamy ją do całości.
+                                if (!fullResponseText.endsWith(textFragment)) {
+                                    if (textFragment.startsWith(fullResponseText)) {
+                                        // Jeśli Google wysłało narastający tekst, nadpisujemy nim całość
+                                        fullResponseText = textFragment;
+                                    } else {
+                                        // W standardowym przypadku po prostu doklejamy nowe słowo
+                                        fullResponseText += textFragment;
+                                    }
+                                }
+
+                                // Czyścimy formatowanie Markdown Twoim poprawionym regexem
+                                const cleanedText = fullResponseText.replace(/\*\*(.*?)\*\*/g, "$1").trim();
+
+                                // Wypychamy zawsze kompletny, narastający od zera tekst do okna czatu
                                 updateHistory(cleanedText);
+                            } else if (json.candidates?.[0]?.finishReason === "SAFETY") {
+                                // Jawna informacja dla użytkownika w przypadku zablokowania treści przez filtry
+                                updateHistory("Przepraszam, nie mogę odpowiedzieć na to pytanie.", true);
                             }
                         } catch (e) {
-                            continue; // Ignore errors from incomplete JSON fragments
+                            continue;
                         }
                     }
                 }
             }
         } catch (error) {
             updateHistory(error.message, true);
+        } finally {
+            // DODANO: Blok finally gwarantuje wyłączenie blokady po sukcesie lub błędzie
+            setIsGenerating(false);
         }
     };
 
@@ -138,8 +169,8 @@ const Chatbot = () => {
                     </div>
 
                     {/* Render the chat history dynamically */}
-                    {chatHistory.map((chat, index) => (
-                        <ChatMessage key={index} chat={chat} />
+                    {chatHistory.map((chat) => (
+                        <ChatMessage key={chat.id} chat={chat} />
                     ))}
                 </div>
 
@@ -149,6 +180,8 @@ const Chatbot = () => {
                         chatHistory={chatHistory}
                         setChatHistory={setChatHistory}
                         generateBotResponse={generateBotResponse}
+                        loadingText={LOADING_TEXT} //TUTAJ: Dodano prop loadingText={LOADING_TEXT}                        
+                        isGenerating={isGenerating} // DODANO: Przekazanie flagi blokady do formularza
                     />
                 </div>
             </div>
