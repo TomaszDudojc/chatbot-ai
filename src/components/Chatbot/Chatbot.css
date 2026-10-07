@@ -242,7 +242,7 @@
 
 /* --- ERROR  --- */
 .chatbot-scope .message.error .message-text {
-  word-break: break-word; 
+  word-break: break-word;
   overflow-wrap: anywhere;
   color: var(--error-red) !important;
   background-color: #fef2f2 !important;
@@ -307,15 +307,15 @@
   border-radius: 28px;
   border: 1px solid var(--border-color);
   padding: 4px 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); 
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
 }
 
 .chatbot-scope .chat-form:focus-within {
   border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.15); 
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.15);
 }
-
+/* ZMIANA INPUTA NA TEXTAREA
 .chatbot-scope .message-input {
   border: none;
   outline: none;
@@ -324,6 +324,19 @@
   width: 100%;
   padding: 0 12px;
   font-size: 0.95rem;
+}
+*/
+.chatbot-scope .message-input {
+  border: none;
+  outline: none;
+  background: none;
+  height: 45px;/* ZMIANA: Stała wysokość początkowa zamiast min-height */
+  width: 100%;
+  padding: 12px 12px;/* ZMIANA: Dopełnienie góra/dół dla równego tekstu wielolinijkowego */
+  font-size: 0.95rem;
+  resize: none;/* NOWE: Blokuje ręczne rozciąganie pola myszką przez użytkownika */
+  font-family: inherit; /* NOWE: Wymusza na textarea dziedziczenie czcionki Inter */
+  overflow-y: hidden; /* NOWE: Całkowicie ukrywa pionowy pasek suwaka w polu wpisywania */
 }
 
 .chatbot-scope .chat-form button {
