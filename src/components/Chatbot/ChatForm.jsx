@@ -48,16 +48,17 @@ const ChatForm = ({ chatHistory, setChatHistory, generateBotResponse, loadingTex
     return (
         <form className="chat-form" onSubmit={handleFormSubmit}>
             {/* DODANO: Atrybut disabled blokujący input na czas generowania odpowiedzi */}
-            {/*ZMIANA INPUTA NA TEXTAREA */} 
+            {/*ZMIANA INPUTA NA TEXTAREA */}
             {/*<input ref={inputRef} type="text" placeholder="Wiadomość..." className="message-input" disabled={isGenerating} required />*/}
             <textarea
+                id="chat-message"
                 ref={inputRef}
                 placeholder="Wiadomość..."
                 className="message-input"
                 disabled={isGenerating}
                 onChange={handleInputChange}
-                onKeyDown={handleKeyDown}    
-                rows="1"                    
+                onKeyDown={handleKeyDown}
+                rows="1"
                 required
             />
             {/* DODANO: Atrybut disabled uniemożliwiający kliknięcie przycisku wysyłania */}
